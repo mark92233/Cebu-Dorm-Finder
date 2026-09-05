@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DormFinder{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandGreen: '#10B981',
+                        brandGreenDark: '#047857',
+                        brandGreenLight: '#ECFDF5',
+                        studentSurface: '#FFFFFF',
+                        studentText: '#1F2937',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-slate-50 text-studentText font-sans antialiased">
+    {% block content %}{% endblock %}
+
+    <!-- Logout Confirmation Modal (Global) -->
+    <div id="logout-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="logout-modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div id="logout-modal-overlay" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="relative inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <i class="fa-solid fa-triangle-exclamation text-red-600"></i>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="logout-modal-title">Confirm Logout</h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500">Are you sure you want to log out?</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                    <a href="{% url 'accounts:logout' %}" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">Logout</a>
+                    <button type="button" id="cancel-logout-button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% block extra_js %}
+    <script>
+        // Global Logout Modal Control
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutModal = document.getElementById('logout-modal');
+            const cancelLogoutButton = document.getElementById('cancel-logout-button');
+            const logoutModalOverlay = document.getElementById('logout-modal-overlay');
+            const logoutTriggers = document.querySelectorAll('.logout-trigger');
+
+            logoutTriggers.forEach(trigger => trigger.addEventListener('click', (e) => { e.preventDefault(); logoutModal.classList.remove('hidden'); }));
+            cancelLogoutButton.addEventListener('click', () => logoutModal.classList.add('hidden'));
+            logoutModalOverlay.addEventListener('click', () => logoutModal.classList.add('hidden'));
+        });
+
+        // If a logged-in user lands on any page from the back/forward cache,
+        // show the logout confirmation modal.
+        window.addEventListener('pageshow', function(event) {
+            const isAuthenticated = document.cookie.includes('is_logged_in=true');
+            if (event.persisted && isAuthenticated) {
+                const logoutModal = document.getElementById('logout-modal');
+                if (logoutModal) logoutModal.classList.remove('hidden');
+            }
+        });
+    </script>
+    {% endblock %}
+</body>
+</html>

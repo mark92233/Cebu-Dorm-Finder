@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dorm Finder{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandGreen: '#10B981',
+                        brandGreenDark: '#047857',
+                        brandGreenLight: '#ECFDF5',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-slate-100 antialiased">
+    <div class="flex h-screen">
+        <!-- Main Sidebar for Navigation -->
+        {% include 'user/includes/sidebar.html' %}
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            {% block page_content %}
+            <!-- The content of pages like maps.html will go here -->
+            {% endblock %}
+        </main>
+    </div>
+
+    {% block extra_js %}
+    {% endblock %}
+</body>
+</html>

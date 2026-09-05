@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}My Dashboard{% endblock %}
+
+{% block content %}
+<div class="bg-slate-50 min-h-screen">
+    <!-- Header -->
+    <div class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">My Dashboard</h1>
+            <div class="text-sm">
+                <span>Welcome, <strong>{{ request.user.email }}</strong>!</span>
+                <a href="#" class="logout-trigger ml-4 text-brandGreenDark font-semibold hover:underline">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="py-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Mock Card 1: My Profile -->
+                <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+                    <h3 class="text-lg font-semibold text-gray-900">My Profile</h3>
+                    <p class="mt-2 text-sm text-gray-600">Update your personal information and profile picture.</p>
+                    <a href="#" class="mt-4 inline-block text-brandGreen font-bold hover:underline">Edit Profile &rarr;</a>
+                </div>
+                <!-- Mock Card 2: Saved Listings -->
+                <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+                    <h3 class="text-lg font-semibold text-gray-900">Saved Listings</h3>
+                    <p class="mt-2 text-sm text-gray-600">View the dorms you've saved for later.</p>
+                    <a href="#" class="mt-4 inline-block text-brandGreen font-bold hover:underline">View Saved &rarr;</a>
+                </div>
+                <!-- Card for Map Search -->
+                <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+                    <h3 class="text-lg font-semibold text-gray-900">School Vicinity Search</h3>
+                    <p class="mt-2 text-sm text-gray-600">Find dorms and establishments near your campus.</p>
+                    <a href="{% url 'maps:main_map' %}" class="mt-4 inline-block text-brandGreen font-bold hover:underline">Start Searching &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

@@ -1,0 +1,470 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DormFinder | Cebu Student Housing Hub</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandGreen: '#10B981',      /* Vibrant Emerald Green */
+                        brandGreenDark: '#047857',  /* Deep Forest Green for text/buttons */
+                        brandGreenLight: '#ECFDF5', /* Soft Mint background */
+                        studentSurface: '#FFFFFF',
+                        studentText: '#1F2937',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+        .hero-background {
+            background-image: url("{% static 'img/hero1.png' %}");
+            background-size: cover;
+            background-position: center;
+        }
+        .hero-background::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            backdrop-filter: blur(8px); /* Increased blur for a more dramatic effect */
+            -webkit-backdrop-filter: blur(8px);
+            background: rgba(15, 23, 42, 0.85); /* Made the overlay even darker for more contrast */
+            /* This creates the gradient blur effect */
+            mask-image: linear-gradient(to bottom, transparent 10%, black 80%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 10%, black 80%);
+        }
+        .academic-shadow {
+            box-shadow: 0 20px 40px -15px rgba(4, 120, 87, 0.1);
+        }
+        .gated-blur {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.85);
+        }
+        /* Adds a subtle shadow to lift text from the background */
+        .hero-background h1, .hero-background .hero-subtext {
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+        }
+        /* Adds a specific glow to the animated text to make it the focal point */
+        #animated-text {
+            /* Re-applies the base shadow and adds a color-matched glow */
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 15px rgba(16, 185, 129, 0.6);
+        }
+        /* Blinking cursor for typing effect */
+        .cursor {
+            display: inline-block;
+            animation: blink 0.7s infinite;
+        }
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-studentText font-sans antialiased selection:bg-brandGreen selection:text-white">
+
+    <!-- 1. NAVIGATION BAR -->
+    <nav class="fixed top-0 left-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Logo Namespace -->
+            <div class="flex items-center space-x-2 cursor-pointer">
+                <!-- Assumes your logo is at static/img/logo.png -->
+                <img src="{% static 'img/logo(1).png' %}" alt="DormFinder Logo" class="h-10 w-auto">
+                <span class="text-xl font-bold tracking-tight text-slate-900">Dorm<span class="text-brandGreen">Finder</span></span>
+            </div>
+            
+            <!-- Navigation Links -->
+            <div class="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-600">
+                <a href="#features" class="hover:text-brandGreen transition-colors">Features</a>
+                <a href="#journey" class="hover:text-brandGreen transition-colors">How It Works</a>
+                <a href="#compliance" class="hover:text-brandGreen transition-colors">Security</a>
+            </div>
+
+            <!-- Auth CTAs -->
+            <div class="flex items-center space-x-4">
+                {% if request.user.is_authenticated %}
+                    <span class="text-sm font-medium text-slate-600">Welcome, {{ request.user.email }}</span>
+                    <a href="{% url 'accounts:dashboard' %}" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">My Dashboard</a>
+                    <a href="#" class="logout-trigger bg-gray-200 text-gray-700 px-4 py-1.5 rounded-md text-sm font-medium hover:bg-gray-300 transition-all duration-200">Logout</a>
+                    {% if request.user.is_staff %}
+                        <a href="/admin/" class="text-sm font-medium text-red-600 hover:text-red-800 transition-colors">Admin</a>
+                    {% endif %}
+                {% else %}
+                    <a href="#" id="login-button" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Login</a>
+                    <a href="{% url 'accounts:register' %}" class="bg-brandGreen text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-brandGreenDark transition-all duration-200 shadow-sm shadow-brandGreen/20">Create Account</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- 2. COHESIVE IMMERSIVE HERO SECTION (Stacked Console Design) -->
+    <header class="relative pt-40 pb-16 md:pt-56 md:pb-24 overflow-hidden hero-background">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6 relative z-10">
+            
+            <!-- Student Context Badge -->
+            <div class="inline-flex items-center gap-2 bg-brandGreen px-3 py-1 rounded-full text-xs font-bold text-white tracking-wide uppercase shadow-lg shadow-black/30">
+                <i class="fa-solid fa-shield-check"></i> Verified Student Housing
+            </div>
+
+            <!-- Impact Headline -->
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white max-w-4xl mx-auto leading-tight">
+                End the Dorm Hunting Chaos.<br>
+                Your Cebu Student Housing Should Be: <span id="animated-text" class="text-brandGreen"></span><span class="cursor text-brandGreen font-light">|</span>
+            </h1>
+            
+            <!-- Explainer Paragraph -->
+            <p class="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed hero-subtext">
+                Skip the chaotic, unverified social media listings. Access an automated housing repository engineered to protect incoming students from rental scams and heavy urban flood corridors.
+            </p>
+            
+            <!-- Centered Direct Action -->
+            <div class="pt-4 flex items-center justify-center gap-4">
+                <!-- Secondary Button -->
+                <a href="#features" class="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white font-bold px-8 py-3 rounded-xl hover:bg-white/20 transform hover:-translate-y-0.5 transition-all text-center">
+                    Learn More
+                </a>
+                <!-- Primary Button -->
+                <a href="{% url 'accounts:register' %}" class="inline-flex items-center gap-2 bg-brandGreen text-brandGreenDark font-bold px-8 py-3 rounded-xl shadow-lg shadow-brandGreen/20 hover:bg-opacity-95 transform hover:-translate-y-0.5 transition-all text-center">
+                    Create Account <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- 3. CORE VALUE PILLARS (Academic Feature Interventions) -->
+    <section id="features" class="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <h2 class="text-3xl font-extrabold tracking-tight text-slate-900">A Safer, Smarter Way to Find Your Dorm</h2>
+            <p class="mt-2 text-slate-600">Our features are designed to protect you and simplify your search.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Card 1 -->
+            <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-4 transition-all hover:border-brandGreen/40">
+                <div class="w-12 h-12 rounded-xl bg-brandGreen/10 border border-brandGreen/20 text-brandGreen font-bold flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-shield-check"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900">Browse with Confidence</h3>
+                <p class="text-sm text-slate-600 leading-relaxed">
+                    Our **Reliability Index** automatically vets listings by analyzing profile history and image data, so you can avoid fake posts and potential scams before you even send a message.
+                </p>
+                <div class="text-[11px] font-mono tracking-wider uppercase text-brandGreenDark font-bold bg-brandGreenLight px-2.5 py-1 rounded inline-block">
+                    Scam Protection
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-4 transition-all hover:border-brandGreen/40">
+                <div class="w-12 h-12 rounded-xl bg-brandGreen/10 border border-brandGreen/20 text-brandGreen font-bold flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-house-flood-water"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900">Avoid Flood-Prone Areas</h3>
+                <p class="text-sm text-slate-600 leading-relaxed">
+                    Don't sign a lease blindly. Our "Stay Dry" map layers show you real-time environmental hazard data, helping you steer clear of housing in severe flood corridors.
+                </p>
+                <div class="text-[11px] font-mono tracking-wider uppercase text-brandGreenDark font-bold bg-brandGreenLight px-2.5 py-1 rounded inline-block">
+                    Flood Zone Data
+                </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-4 transition-all hover:border-brandGreen/40">
+                <div class="w-12 h-12 rounded-xl bg-brandGreen/10 border border-brandGreen/20 text-brandGreen font-bold flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-calendar-check"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900">Always Up-to-Date Listings</h3>
+                <p class="text-sm text-slate-600 leading-relaxed">
+                    Our system automatically checks if a listing is still available. We hide occupied or outdated posts so you don't waste time chasing dorms that are already taken.
+                </p>
+                <div class="text-[11px] font-mono tracking-wider uppercase text-brandGreenDark font-bold bg-brandGreenLight px-2.5 py-1 rounded inline-block">
+                    Live Availability
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. STUDENT JOURNEY ROADMAP -->
+    <section id="journey" class="py-20 bg-white border-y border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="text-3xl font-extrabold tracking-tight text-slate-900">Your Journey to the Perfect Dorm</h2>
+                <p class="mt-2 text-slate-600">Follow these simple steps to find and secure your ideal student housing.</p>
+            </div>
+
+            <!-- Process Grid Line -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Step 1 -->
+                <div class="space-y-3 p-4 bg-slate-50/80 rounded-xl border border-slate-100">
+                    <div class="text-3xl font-black text-brandGreen/20 font-mono">01</div>
+                    <h4 class="text-base font-bold text-slate-950 flex items-center justify-between">
+                        Configure <i class="fa-solid fa-sliders text-xs text-brandGreen"></i>
+                    </h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">Input budget boundaries, necessary amenities, and your prospective campus hub (e.g., UC Main, UV).</p>
+                </div>
+                <!-- Step 2 -->
+                <div class="space-y-3 p-4 bg-slate-50/80 rounded-xl border border-slate-100">
+                    <div class="text-3xl font-black text-brandGreen/20 font-mono">02</div>
+                    <h4 class="text-base font-bold text-slate-950 flex items-center justify-between">
+                        Validate Risk <i class="fa-solid fa-map-location-dot text-xs text-brandGreen"></i>
+                    </h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">Cross-examine properties alongside the automated reliability indices and live physical flood hazard zones.</p>
+                </div>
+                <!-- Step 3 -->
+                <div class="space-y-3 p-4 bg-slate-50/80 rounded-xl border border-slate-100">
+                    <div class="text-3xl font-black text-brandGreen/20 font-mono">03</div>
+                    <h4 class="text-base font-bold text-slate-950 flex items-center justify-between">
+                        Instant Contact <i class="fa-solid fa-paste text-xs text-brandGreen"></i>
+                    </h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">Inject perfectly pre-formatted, professional contact templates directly via secure system deep-links to owners.</p>
+                </div>
+                <!-- Step 4 -->
+                <div class="space-y-3 p-4 bg-slate-50/80 rounded-xl border border-slate-100">
+                    <div class="text-3xl font-black text-brandGreen/20 font-mono">04</div>
+                    <h4 class="text-base font-bold text-slate-950 flex items-center justify-between">
+                        Secure Your Spot <i class="fa-solid fa-key text-xs text-brandGreen"></i>
+                    </h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">Finalize your choice and get ready to move in. Your feedback helps improve the system for future students.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. STUDENT REGISTRATION PORTAL -->
+    <section id="signup" class="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md mx-auto bg-white rounded-2xl p-8 border border-slate-200 shadow-xl relative academic-shadow">
+            <div class="absolute -top-3 -right-3 bg-brandGreenDark text-white text-[10px] uppercase font-mono tracking-widest px-3 py-1 rounded-full font-bold">
+                Student Portal Open
+            </div>
+            
+            <div class="text-center mb-6">
+                <h3 class="text-2xl font-extrabold text-slate-900 tracking-tight">Get Early Access</h3>
+                <p class="text-sm text-slate-500 mt-2">Be the first to know when the full platform launches.</p>
+            </div>
+
+            <!-- Form -->
+            <form class="flex gap-2" onsubmit="event.preventDefault();">
+                <input type="email" placeholder="your-student-email@university.edu.ph" class="flex-grow bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brandGreen focus:bg-white transition-all" required>
+                <div class="">
+                    <button type="submit" class="h-full bg-brandGreenDark text-white font-bold px-6 rounded-lg hover:bg-opacity-95 transform active:scale-[0.99] transition-all text-sm tracking-wide shadow-md shadow-brandGreenDark/10">
+                        Notify Me
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- 6. PRIVACY COMPLIANCE & PROFESSIONAL FOOTER -->
+    <footer id="compliance" class="bg-slate-900 text-slate-400 text-sm border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <!-- Top row with compliance and links -->
+            <div class="grid md:grid-cols-3 gap-8 mb-8">
+                <!-- Compliance Column -->
+                <div class="md:col-span-2 space-y-2">
+                    <div class="flex items-center gap-2 text-white font-semibold text-base">
+                        <i class="fa-solid fa-gavel text-brandGreen"></i>
+                        <span>Data Privacy Commitment</span>
+                    </div>
+                    <p class="text-xs leading-relaxed">
+                        We are committed to student privacy and data protection. Our system is designed to comply with National Privacy Commission guidelines by responsibly handling publicly available information and securing personal data.
+                    </p>
+                </div>
+                <!-- Links Column -->
+                <div class="space-y-2 text-left md:text-right">
+                     <h4 class="font-bold text-white uppercase tracking-wider text-xs">Navigate</h4>
+                     <ul class="space-y-1">
+                        <li><a href="#" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Contact</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Terms of Service</a></li>
+                     </ul>
+                </div>
+            </div>
+            <!-- Bottom row with copyright -->
+            <div class="border-t border-slate-800 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs">
+                <p>&copy; 2026 DormFinder. All Rights Reserved.</p>
+                <div class="flex items-center gap-4 pt-4 sm:pt-0 text-lg">
+                    <a href="#" class="hover:text-white transition-colors" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+                    <a href="#" class="hover:text-white transition-colors" aria-label="Twitter"><i class="fa-brands fa-twitter"></i></a>
+                    <a href="#" class="hover:text-white transition-colors" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div id="modal-overlay" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+            <!-- Modal panel -->
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="relative inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full sm:p-6">
+                <!-- Close Button -->
+                <div class="absolute top-0 right-0 pt-4 pr-4">
+                    <button type="button" id="modal-close-button" class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brandGreen">
+                        <span class="sr-only">Close</span>
+                        <i class="fa-solid fa-xmark h-6 w-6"></i>
+                    </button>
+                </div>
+                <div>
+                    <div class="text-center">
+                        <a href="{% url 'home' %}">
+                            <img class="mx-auto h-12 w-auto" src="{% static 'img/logo(1).png' %}" alt="DormFinder">
+                        </a>
+                        <h3 class="mt-4 text-2xl leading-6 font-extrabold text-gray-900" id="modal-title">
+                            Student Portal Login
+                        </h3>
+                        <p class="mt-2 text-sm text-gray-500">
+                            Don't have an account? <a href="{% url 'accounts:register' %}" class="font-medium text-brandGreen hover:text-brandGreenDark">Create one here</a>.
+                        </p>
+                    </div>
+                    <div class="mt-8 pt-6 border-t border-gray-200">
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="mb-4 p-3 rounded-md text-sm {% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}" role="alert">
+                                    <i class="fa-solid fa-circle-exclamation mr-2"></i>
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+
+                        <form class="space-y-6" action="{% url 'accounts:login' %}" method="POST">
+                            {% csrf_token %}
+                            <div>
+                                <label for="id_email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                                <input type="email" name="email" id="id_email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brandGreen focus:ring-brandGreen sm:text-sm p-3" placeholder="your@email.com" required>
+                            </div>
+                            <div>
+                                <label for="id_password" class="block text-sm font-medium text-gray-700">Password</label>
+                                <input type="password" name="password" id="id_password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brandGreen focus:ring-brandGreen sm:text-sm p-3" placeholder="••••••••" required>
+                            </div>
+                            <div class="flex items-center justify-end">
+                                <div class="text-sm">
+                                    <a href="#" class="font-medium text-brandGreen hover:text-brandGreenDark">
+                                        Forgot your password?
+                                    </a>
+                                </div>
+                            </div>
+                            <div>
+                                <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brandGreenDark hover:bg-brandGreen focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brandGreen transition-colors duration-200">
+                                    Sign in
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const animatedText = document.getElementById('animated-text');
+        const words = ['Verified.', 'Flood-Safe.', 'Simplified.'];
+        let wordIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+
+        const typingSpeed = 150;
+        const deletingSpeed = 75;
+        const delayBetweenWords = 2000;
+
+        function type() {
+            const currentWord = words[wordIndex];
+            const timeoutSpeed = isDeleting ? deletingSpeed : typingSpeed;
+
+            if (isDeleting) {
+                // Remove characters
+                animatedText.textContent = currentWord.substring(0, charIndex - 1);
+                charIndex--;
+            } else {
+                // Add characters
+                animatedText.textContent = currentWord.substring(0, charIndex + 1);
+                charIndex++;
+            }
+
+            // Check if word is fully typed or deleted
+            if (!isDeleting && charIndex === currentWord.length) {
+                // Pause at end of word, then start deleting
+                setTimeout(() => { isDeleting = true; type(); }, delayBetweenWords);
+                return;
+            } else if (isDeleting && charIndex === 0) {
+                // Pause, move to next word, then start typing
+                isDeleting = false;
+                wordIndex = (wordIndex + 1) % words.length;
+                setTimeout(type, 500);
+                return;
+            }
+
+            setTimeout(type, timeoutSpeed);
+        }
+
+        // Start the animation when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            if (animatedText) {
+                setTimeout(type, 250);
+            }
+
+            // Check for URL parameter to open login modal
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'login') {
+                loginModal.classList.remove('hidden');
+            }
+        });
+
+        // Modal Control Script
+        const loginButton = document.getElementById('login-button');
+        const loginModal = document.getElementById('login-modal');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalCloseButton = document.getElementById('modal-close-button');
+
+        function openModal(e) {
+            if (e) e.preventDefault(); // Prevent the link from navigating
+            loginModal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            loginModal.classList.add('hidden');
+            // Clean up the URL by removing the '?action=login' parameter without reloading the page
+            const url = new URL(window.location);
+            if (url.searchParams.has('action')) {
+                url.searchParams.delete('action');
+                window.history.replaceState({}, document.title, url);
+            }
+        }
+
+        // Only add listeners if the elements exist on the page.
+        // This prevents script errors when a user is already logged in.
+        if (loginButton) {
+            loginButton.addEventListener('click', openModal);
+        }
+        if (modalOverlay && modalCloseButton) {
+            modalOverlay.addEventListener('click', closeModal);
+            modalCloseButton.addEventListener('click', closeModal);
+        }
+
+        // If a logged-in user lands on this page from the back/forward cache,
+        // show the logout confirmation modal instead of the stale page content.
+        window.addEventListener('pageshow', function(event) {
+            const isAuthenticated = document.cookie.includes('is_logged_in=true');
+
+            if (event.persisted && isAuthenticated) {
+                showLogoutModal();
+            }
+        });
+    </script>
+</body>
+</html>

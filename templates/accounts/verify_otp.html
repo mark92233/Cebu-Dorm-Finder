@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Verify Your Email{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-background {
+        background-image: url("{% static 'img/hero1.png' %}");
+        background-size: cover;
+        background-position: center;
+        position: relative;
+    }
+    .page-background::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        background: rgba(15, 23, 42, 0.85); /* Dark overlay */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen page-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="relative w-full max-w-md">
+        <div class="bg-white py-8 px-6 shadow-2xl sm:rounded-2xl sm:px-10 text-center">
+            <img class="mx-auto h-12 w-auto mb-6" src="{% static 'img/logo(1).png' %}" alt="DormFinder">
+            <h2 class="text-2xl font-extrabold text-gray-900 mb-2">Step 2: Check Your Email</h2>
+            <p class="text-gray-600 mb-6">We've sent a 6-digit code to <strong>{{ user_email }}</strong>. Please enter it below.</p>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-4 p-3 rounded-md text-sm {% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post" action="{% url 'accounts:verify_otp' %}">
+                {% csrf_token %}
+                <div>
+                    <label for="otp" class="sr-only">OTP</label>
+                    <input type="text" name="otp" id="otp" maxlength="6" class="block w-full text-center text-2xl tracking-[1em] rounded-md border-gray-300 shadow-sm focus:border-brandGreen focus:ring-brandGreen sm:text-2xl p-3" placeholder="••••••" required>
+                </div>
+                <div class="mt-6">
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brandGreenDark hover:bg-brandGreen focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brandGreen transition-colors duration-200">
+                        Verify and Continue
+                    </button>
+                </div>
+            </form>
+            <p class="mt-4 text-sm text-gray-500">Didn't receive the email? <a href="{% url 'accounts:register' %}" class="font-semibold text-brandGreen hover:text-brandGreenDark">Try again</a>.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

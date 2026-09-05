@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Create an Account{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-background {
+        background-image: url("{% static 'img/hero1.png' %}");
+        background-size: cover;
+        background-position: center;
+        position: relative;
+    }
+    .page-background::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        background: rgba(15, 23, 42, 0.85); /* Dark overlay from hero */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen page-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="relative w-full max-w-2xl">
+        <div class="bg-white py-8 px-6 shadow-2xl sm:rounded-2xl sm:px-10">
+                <div class="mb-8 text-center">
+                    <a href="{% url 'home' %}">
+                        <img class="mx-auto h-12 w-auto" src="{% static 'img/logo(1).png' %}" alt="DormFinder">
+                    </a>
+                    <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                        Step 1: Create Your Account
+                    </h2>
+                    <p class="mt-2 text-sm text-gray-600">
+                        Already have an account? <a href="{% url 'home' %}?action=login" class="font-semibold text-brandGreen hover:text-brandGreenDark">Login here</a>
+                    </p>
+                </div>
+
+                {% if messages %}
+                    <div class="mb-4 space-y-2">
+                    {% for message in messages %}
+                        <div class="p-3 rounded-md text-sm bg-red-100 text-red-800" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+
+                <form class="space-y-4" action="{% url 'accounts:register' %}" method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <fieldset class="space-y-4">
+                        <legend class="sr-only">Email</legend>
+                        
+                        <div class="rounded-md bg-blue-50 p-3">
+                            <div class="flex items-start">
+                              <div class="flex-shrink-0">
+                                <i class="fa-solid fa-circle-info text-blue-500 mt-0.5" aria-hidden="true"></i>
+                              </div>
+                              <div class="ml-3">
+                                <p class="text-sm text-blue-800">We'll send a verification link to your email. You will set your password in the next step after verifying.</p>
+                              </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="{{ user_form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">Enter your email to get started</label>
+                            <div class="mt-1">
+                                <input type="email" name="{{ user_form.email.name }}" id="{{ user_form.email.id_for_label }}" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-brandGreen focus:ring-brandGreen sm:text-sm py-2.5 px-3" placeholder="your@email.com" required>
+                            </div>
+                        </div>
+
+                    </fieldset>
+
+                    <div class="pt-4">
+                        <button type="submit" class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brandGreenDark hover:bg-brandGreen focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brandGreen transition-colors duration-200">
+                            Send Verification Email
+                        </button>
+                    </div>
+                </form>
+            </div>
+    </div>
+</div>
+{% endblock %}

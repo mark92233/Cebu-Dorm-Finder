@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your DormFinder Verification Code</title>
+</head>
+<body style="font-family: sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; padding: 20px;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+        <h2 style="color: #047857;">Welcome to DormFinder, {{ user.email }}!</h2>
+        <p>Thank you for registering. To complete your registration, please use the following One-Time Password (OTP):</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <p style="display: inline-block; padding: 12px 25px; background-color: #ECFDF5; color: #047857; font-size: 24px; font-weight: bold; letter-spacing: 5px; border-radius: 5px;">
+                {{ otp }}
+            </p>
+        </div>
+        <p>This code will expire in 10 minutes. You will use it on the next screen to verify your email and set your password.</p>
+        <p>If you did not register for a DormFinder account, please ignore this email.</p>
+        <p>Best regards,<br>The DormFinder Team</p>
+    </div>
+</body>
+</html>

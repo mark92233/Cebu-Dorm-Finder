@@ -1,0 +1,94 @@
+{% extends "user/base.html" %}
+{% load static %}
+
+{% block title %}Scraped Housing Posts{% endblock %}
+
+{% block page_content %}
+<div class="bg-slate-100 min-h-screen">
+    <div class="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold tracking-tight text-slate-900">Scraped Housing Posts</h1>
+            <p class="mt-1 text-sm text-slate-600">A raw feed of the latest housing opportunities gathered from Facebook groups.</p>
+        </div>
+
+        <!-- Posts Feed -->
+        <div class="space-y-6">
+            {% for post in page_obj %}
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm font-semibold text-brandGreenDark">{{ post.source_group }}</p>
+                        <p class="text-xs text-slate-500">Scraped on: {{ post.scraped_at|date:"F j, Y, P" }}</p>
+                    </div>
+                    <a href="{{ post.post_url }}" target="_blank" rel="noopener noreferrer" class="text-xs font-medium bg-slate-100 text-slate-700 px-3 py-1 rounded-full hover:bg-slate-200 transition-colors shrink-0 ml-4">
+                        View Original <i class="fa-solid fa-arrow-up-right-from-square text-xs ml-1"></i>
+                    </a>
+                </div>
+                <div class="mt-4 text-sm text-slate-800 leading-relaxed whitespace-pre-wrap font-mono bg-slate-50 p-4 rounded-md overflow-x-auto">
+                    {{ post.post_content }}
+                </div>
+            </div>
+            {% empty %}
+            {% for i in "x"|ljust:"10" %}
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm font-semibold text-brandGreenDark">
+                            {% if forloop.counter|divisibleby:"2" %}
+                            CEBU RENTALS - HOUSE, CONDO, APARTMENT FOR RENT IN CEBU CITY
+                            {% else %}
+                            Cebu Rentals: Apartments, Condos, Houses, Rooms
+                            {% endif %}
+                        </p>
+                        <p class="text-xs text-slate-500">Scraped on: May {{ forloop.counter|add:"20" }}, 2026, 2:{{ forloop.counter }}4 P.M.</p>
+                    </div>
+                    <a href="#" rel="noopener noreferrer" class="text-xs font-medium bg-slate-100 text-slate-700 px-3 py-1 rounded-full hover:bg-slate-200 transition-colors shrink-0 ml-4">
+                        View Original <i class="fa-solid fa-arrow-up-right-from-square text-xs ml-1"></i>
+                    </a>
+                </div>
+                <div class="mt-4 text-sm text-slate-800 leading-relaxed whitespace-pre-wrap font-mono bg-slate-50 p-4 rounded-md overflow-x-auto">
+                    This is mock post #{{ forloop.counter }}.
+
+                    LF: Room for Rent (Female)
+                    - Location: Near SWU Village
+                    - Budget: 4,000 PHP
+                    - With own CR and good ventilation.
+                    - Can cook and do laundry.
+                    - No curfew is a big plus.
+
+                    Please message me if you have a listing. Thank you.
+                    Contact: [PHONE REMOVED]
+                </div>
+            </div>
+            {% endfor %}
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <nav class="mt-12 flex items-center justify-between border-t border-slate-200 pt-4">
+            <div class="flex w-0 flex-1">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    Previous
+                </a>
+                {% endif %}
+            </div>
+            <div class="hidden md:flex">
+                <span class="text-sm text-gray-700">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+            </div>
+            <div class="flex w-0 flex-1 justify-end">
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    Next
+                </a>
+                {% endif %}
+            </div>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,567 @@
+{% extends "user/base.html" %}
+{% load static %}
+
+{% block title %}School Vicinity Search{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Adjust height calculation for the new layout with the added button */
+    .sidebar-scroll { height: calc(100vh - 285px); overflow-y: auto; }
+
+    /* Custom Marker Pin Styling */
+    .leaflet-div-icon {
+        background: transparent;
+        border: none;
+    }
+    .marker-pin {
+        width: 32px;
+        height: 32px;
+        border-radius: 50% 50% 50% 0;
+        background: #047857; /* brandGreenDark */
+        position: absolute;
+        transform: rotate(-45deg);
+        left: 50%;
+        top: 50%;
+        margin: -16px 0 0 -16px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+        border: 2px solid white;
+        transition: transform 0.2s ease-in-out;
+    }
+    .marker-pin i {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(45deg);
+        color: white;
+        font-size: 14px;
+    }
+    /* Style for school markers */
+    .school-marker .marker-pin {
+        background-color: #10B981; /* brandGreen, matching the main buttons */
+    }
+    .marker-highlight .marker-pin {
+        transform: rotate(-45deg) scale(1.2);
+    }
+    /* Styling for the isochrone travel-time polygon */
+    .isochrone-polygon {
+        fill-color: #10B981; /* brandGreen */
+        fill-opacity: 0.15;
+        stroke: #047857; /* brandGreenDark */
+    }
+
+    /* Custom styling for radio button group to look like toggle buttons */
+    #proximity-group label {
+        @apply block w-full text-center p-3 rounded-md border border-slate-300 bg-white cursor-pointer text-sm font-medium text-slate-700 transition-colors;
+    }
+    #proximity-group .peer:checked + label {
+        @apply bg-brandGreen border-brandGreenDark text-white shadow-md;
+    }
+    #proximity-group label:hover {
+        @apply border-slate-400;
+    }
+
+    /* Collapsible panel styles */
+    #left-panel.is-collapsed {
+        margin-left: -24rem; /* w-96 is 24rem */
+    }
+    #panel-toggle-icon {
+        transition: transform 0.3s ease-in-out;
+    }
+    #left-panel.is-collapsed #panel-toggle-icon {
+        transform: rotate(180deg);
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="flex h-full bg-slate-50 relative">
+
+    <!-- Loading Spinner Overlay -->
+    <div id="loading-overlay" class="absolute inset-0 bg-slate-900/20 backdrop-blur-sm z-40 flex flex-col items-center justify-center space-y-4">
+        <i class="fa-solid fa-spinner fa-spin text-brandGreen text-5xl"></i>
+        <p class="text-white text-lg font-semibold animate-pulse">Loading Map Contents...</p>
+    </div>
+
+
+    <!-- LEFT SIDE PANEL: CONTROLS & RESULTS -->
+    <aside id="left-panel" class="w-96 bg-white border-r border-slate-200 flex flex-col z-20 shadow-lg relative transition-all duration-300 ease-in-out">
+        <!-- Header -->
+        <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 rounded-lg bg-brandGreen/10 flex items-center justify-center text-brandGreen font-bold">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                </div>
+                <div>
+                    <h1 class="text-md font-bold text-slate-900 leading-none">Vicinity Search</h1>
+                    <p class="text-xs text-slate-500 mt-0.5">Find establishments near a school</p>
+                </div>
+            </div>
+        </div>
+        <!-- Collapse Toggle Button -->
+        <button id="panel-toggle-button" class="absolute top-1/2 -right-4 -translate-y-1/2 w-8 h-16 bg-white border border-slate-200 rounded-r-lg flex items-center justify-center text-slate-500 hover:bg-slate-50 z-20 focus:outline-none">
+            <i id="panel-toggle-icon" class="fa-solid fa-chevron-left"></i>
+        </button>
+
+        <!-- Search Form -->
+        <div class="p-4 bg-slate-50 border-b border-slate-200 space-y-3">
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Search for a School</label>
+                <div class="relative">
+                    <div class="flex gap-2">
+                        <div class="relative w-full">
+                            <i class="fa-solid fa-graduation-cap absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+                            <input type="text" id="school-search-input" placeholder="Filter schools in Cebu..." class="w-full bg-white border border-slate-300 rounded-md pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brandGreen focus:border-brandGreen" autocomplete="off">
+                        </div>
+                    </div>
+                    <div id="search-suggestions" class="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg z-20 hidden max-h-60 overflow-y-auto">
+                        <!-- Suggestions will be injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scraped Posts Link -->
+        <div class="p-4 border-b border-slate-200">
+            <a href="{% url 'maps:scraped_posts' %}" class="w-full bg-slate-800 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-slate-900 transition-colors flex items-center justify-center text-sm">
+                <i class="fa-brands fa-facebook-f mr-2"></i>View Scraped Posts
+            </a>
+        </div>
+
+        <!-- Results List -->
+        <div class="p-4 flex-1 flex flex-col">
+            <div class="flex items-center justify-between mb-3">
+                <h2 id="results-header" class="text-xs font-mono uppercase text-slate-400 tracking-wider font-bold">Results</h2>
+                <span id="poi-counter-badge" class="bg-brandGreenLight text-brandGreenDark font-mono text-[10px] font-bold px-2 py-0.5 rounded-full">0 Found</span>
+            </div>
+            <div id="results-list" class="sidebar-scroll space-y-2 pr-1">
+                <div class="text-center py-12 text-slate-400 space-y-2" id="results-placeholder">
+                    <i class="fa-solid fa-school text-2xl text-slate-300"></i>
+                    <p class="text-xs">Schools will be listed here once loaded.</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- RIGHT SIDE PANEL: MAP -->
+    <main class="flex-1 relative bg-slate-100 z-10">
+        <div id="map" class="w-full h-full"></div>
+
+        <!-- School Information Card (Initially Hidden) -->
+        <div id="school-info-card" class="absolute top-4 right-4 w-96 bg-white rounded-xl shadow-2xl z-[1000] hidden flex-col transition-all duration-300 overflow-hidden">
+            <div id="info-card-image-container" class="h-48 bg-slate-200 rounded-t-lg flex items-center justify-center relative">
+                <!-- Image or placeholder will be injected here -->
+            </div>
+            <div class="p-5 flex-1 flex flex-col">
+                <h3 id="info-card-name" class="text-xl font-bold text-slate-900 leading-tight">School Name</h3>
+                <div class="flex items-center text-sm text-slate-500 mt-2">
+                    <i class="fa-solid fa-map-marker-alt w-4 text-center mr-2 text-slate-400"></i>
+                    <p id="info-card-location">School Location</p>
+                </div>
+                <p id="info-card-description" class="text-sm text-slate-600 mt-4 leading-relaxed flex-grow">Further details about the institution can be fetched from open data sources.</p>
+            </div>
+            <div class="p-4 bg-slate-50 border-t border-slate-200">
+                <button id="open-dorm-search-modal" class="w-full bg-brandGreen text-white font-bold py-2.5 px-4 rounded-lg hover:bg-brandGreenDark transition-colors flex items-center justify-center text-base">
+                    <i class="fa-solid fa-magnifying-glass mr-2"></i>Search Dorms
+                </button>
+            </div>
+            <button id="close-info-card" title="Close" class="absolute top-3 right-3 w-8 h-8 bg-black/40 text-white rounded-full flex items-center justify-center hover:bg-black/60 transition-colors text-xl leading-none">&times;</button>
+        </div>
+
+    </main>
+
+    <!-- Dorm Search Filter Modal (Initially Hidden) -->
+    <div id="dorm-search-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[2000] hidden items-center justify-center p-4 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+            <!-- Modal Header -->
+            <div class="p-4 border-b border-slate-200 flex justify-between items-center flex-shrink-0">
+                <h2 class="text-lg font-bold text-slate-800">Dormitory Search Filters</h2>
+                <button id="close-dorm-modal" title="Close" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">&times;</button>
+            </div>
+            <!-- Modal Body (Form) -->
+            <form id="dorm-filter-form" class="p-6 space-y-6 overflow-y-auto">
+                <!-- Financial Constraints -->
+                <div>
+                    <label for="budget" class="block text-sm font-medium text-slate-700">Maximum Monthly Budget</label>
+                    <div class="flex items-center gap-4 mt-2">
+                        <input type="range" id="budget" name="budget" min="2000" max="20000" step="500" value="5000" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brandGreen">
+                        <span class="font-mono text-slate-800 bg-slate-100 px-3 py-1 rounded-md w-28 text-center">₱<span id="budget-value">5,000</span></span>
+                    </div>
+                </div>
+
+                <!-- Spatial Thresholds -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Search Radius</label>
+                    <div class="grid grid-cols-3 gap-2" id="proximity-group">
+                        <input type="radio" name="proximity" value="500" id="prox-500" class="sr-only peer">
+                        <label for="prox-500">500m</label>
+                        <input type="radio" name="proximity" value="1000" id="prox-1000" class="sr-only peer" checked>
+                        <label for="prox-1000">1km</label>
+                        <input type="radio" name="proximity" value="2000" id="prox-2000" class="sr-only peer">
+                        <label for="prox-2000">2km</label>
+                    </div>
+                </div>
+
+                <!-- Room Configuration & Gender Policy -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="room_config" class="block text-sm font-medium text-slate-700">Room Configuration</label>
+                        <select id="room_config" name="room_config" class="mt-1 block w-full p-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brandGreen">
+                            <option value="any">Any</option>
+                            <option value="solo">Solo Room</option>
+                            <option value="shared_room">Shared Room</option>
+                            <option value="shared_bedspace">Shared Bedspace</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="gender_policy" class="block text-sm font-medium text-slate-700">Gender Accommodation</label>
+                        <select id="gender_policy" name="gender_policy" class="mt-1 block w-full p-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brandGreen">
+                            <option value="any">Any (Co-ed)</option>
+                            <option value="female_only">Female Only</option>
+                            <option value="male_only">Male Only</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Utility Checklist -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">Essential Amenities</label>
+                    <div class="mt-2 grid grid-cols-2 gap-x-4 gap-y-2">
+                        <label class="flex items-center"><input type="checkbox" name="amenities[]" value="wifi" class="h-4 w-4 rounded border-slate-300 text-brandGreen focus:ring-brandGreen"> <span class="ml-2 text-sm text-slate-600">Wi-Fi Included</span></label>
+                        <label class="flex items-center"><input type="checkbox" name="amenities[]" value="ac" class="h-4 w-4 rounded border-slate-300 text-brandGreen focus:ring-brandGreen"> <span class="ml-2 text-sm text-slate-600">Air Conditioning</span></label>
+                        <label class="flex items-center"><input type="checkbox" name="amenities[]" value="cooking" class="h-4 w-4 rounded border-slate-300 text-brandGreen focus:ring-brandGreen"> <span class="ml-2 text-sm text-slate-600">Cooking Allowed</span></label>
+                        <label class="flex items-center"><input type="checkbox" name="amenities[]" value="no_curfew" class="h-4 w-4 rounded border-slate-300 text-brandGreen focus:ring-brandGreen"> <span class="ml-2 text-sm text-slate-600">No Curfew</span></label>
+                    </div>
+                </div>
+            </form>
+            <!-- Modal Footer -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3 flex-shrink-0">
+                <button type="button" id="close-dorm-modal-footer" class="px-4 py-2 text-sm font-medium bg-white border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50">Cancel</button>
+                <button type="submit" form="dorm-filter-form" class="px-4 py-2 text-sm font-medium bg-brandGreen text-white rounded-md hover:bg-brandGreenDark">Apply Filters</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+
+<!-- Leaflet.js CSS and JS (the open-source map library) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script>
+    let map;
+    let schoolResultsLayer; // A LayerGroup for the initial school search results
+    let allSchools = []; // To store all fetched schools for client-side filtering
+
+    // Debounce helper to limit API calls while typing
+    function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+    /**
+     * Creates a custom HTML marker icon using L.divIcon.
+     * @param {string} iconClass - The Font Awesome icon class (e.g., 'fa-coffee').
+     * @param {string} markerClass - An extra class for the marker container (e.g., 'school-marker').
+     * @returns {L.DivIcon} A Leaflet DivIcon object.
+     */
+    function createDivIcon(iconClass, markerClass = '') {
+        return L.divIcon({
+            html: `<div class="marker-pin"><i class="fa-solid ${iconClass}"></i></div>`,
+            className: `leaflet-div-icon ${markerClass}`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+    }
+
+    /**
+     * Gets the CSRF token from the cookies.
+     * @param {string} name The name of the cookie (csrftoken).
+     * @returns {string|null} The CSRF token value.
+     */
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const cebuCoords = { lat: 10.3157, lng: 123.8854 };
+
+        // 1. Initialize the Leaflet Map
+        // Start with a wider, provincial view of Cebu.
+        map = L.map('map', { zoomControl: false }).setView([cebuCoords.lat, cebuCoords.lng], 10);
+
+        // 2. Add the Geoapify tile layer (a professional map style)
+        // Reverted to the classic OpenStreetMap style as requested
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 20,
+        }).addTo(map);
+
+        // 3. Initialize the layer group that will hold our search results
+        schoolResultsLayer = L.layerGroup().addTo(map);
+
+        // 4. Add event listener for the filter input
+        const searchInput = document.getElementById('school-search-input');
+        searchInput.addEventListener('input', debounce(filterSchools, 300));
+
+        // Add event listener for the info card's close button
+        document.getElementById('close-info-card').addEventListener('click', () => {
+            const infoCard = document.getElementById('school-info-card');
+            infoCard.classList.add('hidden');
+            infoCard.classList.remove('flex');
+        });
+
+        // --- Dorm Search Modal Logic ---
+        const dormModal = document.getElementById('dorm-search-modal');
+        const openModalBtn = document.getElementById('open-dorm-search-modal');
+        const closeModalBtn = document.getElementById('close-dorm-modal');
+        const closeModalFooterBtn = document.getElementById('close-dorm-modal-footer');
+
+        const openModal = () => {
+            dormModal.classList.remove('hidden');
+            dormModal.classList.add('flex');
+        };
+        const closeModal = () => {
+            dormModal.classList.add('hidden');
+            dormModal.classList.remove('flex');
+        };
+
+        openModalBtn.addEventListener('click', openModal);
+        closeModalBtn.addEventListener('click', closeModal);
+        closeModalFooterBtn.addEventListener('click', closeModal);
+        dormModal.addEventListener('click', (e) => {
+            if (e.target.id === 'dorm-search-modal') closeModal();
+        });
+
+        // Budget slider value display
+        const budgetSlider = document.getElementById('budget');
+        const budgetValue = document.getElementById('budget-value');
+        budgetSlider.addEventListener('input', (e) => {
+            budgetValue.textContent = parseInt(e.target.value).toLocaleString();
+        });
+
+        // --- Left Panel Collapse Logic ---
+        const leftPanel = document.getElementById('left-panel');
+        const panelToggleButton = document.getElementById('panel-toggle-button');
+
+        panelToggleButton.addEventListener('click', () => {
+            leftPanel.classList.toggle('is-collapsed');
+            // After the transition, tell Leaflet to resize the map
+            // to fit the new container size.
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 350); // Slightly longer than the CSS transition duration
+        });
+
+        // --- For Debugging: Log available Gemini Models to F12 Console ---
+        fetch("{% url 'maps:list_gemini_models' %}")
+            .then(response => response.json())
+            .then(data => {
+                console.log("✅ Available Gemini Models (for 'generateContent'):", data.models);
+            })
+            .catch(error => {
+                console.error("❌ Could not fetch Gemini model list:", error);
+            });
+
+        // 5. Load all schools on page load
+        loadInitialSchools();
+    });
+
+    async function loadInitialSchools() {
+        const loadingOverlay = document.getElementById('loading-overlay');
+
+        const apiKey = '{{ geoapify_api_key }}';
+        // Bounding box for Cebu Island: [minLon, minLat, maxLon, maxLat]
+        const cebuBoundingBox = [123.2, 9.4, 124.1, 11.4];
+
+        try {
+            // Filtered to only include higher education institutions
+            const categories = ['education.university', 'education.college'];
+            const filter = `rect:${cebuBoundingBox.join(',')}`;
+            const limit = 500;
+
+            const url = `https://api.geoapify.com/v2/places?categories=${encodeURIComponent(categories.join(','))}&filter=${encodeURIComponent(filter)}&limit=${limit}&apiKey=${apiKey}`;
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (!response.ok) {
+                console.error("Geoapify Places API Error:", data);
+                throw new Error(data.message || "Failed to fetch schools from API.");
+            }
+
+            // Client-side filter to ensure results are strictly within Cebu province.
+            // The API's rectangular filter can include parts of neighboring islands,
+            // so we add this check for accuracy.
+            const cebuSchools = data.features.filter(feature => {
+                const props = feature.properties;
+                // Broaden the filter to check multiple address fields (county, state, city)
+                // to reliably identify locations within Cebu, as the specific field can vary.
+                const county = (props.county || '').toLowerCase();
+                const state = (props.state || '').toLowerCase();
+                const city = (props.city || '').toLowerCase();
+                return county.includes('cebu') || state.includes('cebu') || city.includes('cebu');
+            });
+
+            allSchools = cebuSchools;
+            // Display all provincial schools, but keep the initial map view focused on Cebu City.
+            displaySchools(allSchools, false);
+
+            // After pins are loaded, wait briefly for the UI to update, then fly to the city center.
+            setTimeout(() => {
+                const cebuCityCoords = { lat: 10.3157, lng: 123.8854 };
+                map.flyTo([cebuCityCoords.lat, cebuCityCoords.lng], 13, {
+                    animate: true,
+                    duration: 2 // seconds
+                });
+            }, 500); // 500ms delay allows the loading overlay to disappear smoothly first.
+        } catch (error) {
+            console.error("Error loading initial schools:", error);
+            const resultsList = document.getElementById('results-list');
+            resultsList.innerHTML = `<div class="text-center py-12 text-slate-400 space-y-1"><p class="text-xs font-semibold text-red-500">Could not load school data.</p><p class="text-xs text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded inline-block">Error: ${error.message}</p></div>`;
+        } finally {
+            loadingOverlay.classList.add('hidden');
+            loadingOverlay.classList.remove('flex');
+        }
+    }
+
+    function filterSchools() {
+        const query = document.getElementById('school-search-input').value.toLowerCase();
+        if (!query) {
+            displaySchools(allSchools, true);
+            return;
+        }
+        const filtered = allSchools.filter(school => {
+            const props = school.properties;
+            const name = (props.name || '').toLowerCase();
+            const address = (props.address_line2 || '').toLowerCase();
+            return name.includes(query) || address.includes(query);
+        });
+        displaySchools(filtered, true);
+    }
+     /**
+     * Displays the school info card by fetching data from our backend pipeline.
+     * @param {object} schoolFeature The GeoJSON feature for the selected school.
+     */
+    async function showSchoolInfoCard(schoolFeature) {
+        const infoCard = document.getElementById('school-info-card');
+        const nameEl = document.getElementById('info-card-name');
+        const locationEl = document.getElementById('info-card-location');
+        const imageContainerEl = document.getElementById('info-card-image-container');
+        const descriptionEl = document.getElementById('info-card-description');
+
+        const schoolProps = schoolFeature.properties;
+
+        // 1. Populate text content
+        nameEl.textContent = schoolProps.name || 'N/A';
+        locationEl.textContent = schoolProps.address_line2 || 'Location not available';
+
+        // 2. Show card and set to loading state
+        infoCard.classList.remove('hidden');
+        infoCard.classList.add('flex');
+        imageContainerEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-slate-400 text-2xl"></i>';
+        descriptionEl.textContent = 'Fetching details...';
+
+        // 3. Fetch details from our backend pipeline
+        try {
+            const csrftoken = getCookie('csrftoken');
+            const response = await fetch("{% url 'maps:fetch_school_details' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    school_name: schoolProps.name,
+                    location: schoolProps.address_line2
+                })
+            });
+
+            if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
+
+            const details = await response.json();
+
+            // Update card with response
+            imageContainerEl.innerHTML = details.imageUrl
+                ? `<img src="${details.imageUrl}" alt="${schoolProps.name}" class="w-full h-full object-cover rounded-t-lg">`
+                : '<div class="w-full h-full flex flex-col items-center justify-center bg-slate-200 rounded-t-lg"><i class="fa-solid fa-camera-slash text-slate-400 text-2xl"></i><p class="text-xs text-slate-500 mt-2">No image available</p></div>';
+            descriptionEl.textContent = details.summary || 'No detailed description available.';
+
+        } catch (error) {
+            console.error("Error fetching school details from backend:", error);
+            descriptionEl.textContent = 'Could not load details. Please try again.';
+            imageContainerEl.innerHTML = '<div class="w-full h-full flex items-center justify-center bg-slate-200 rounded-t-lg"><i class="fa-solid fa-circle-exclamation text-red-400 text-2xl"></i></div>';
+        }
+    }
+
+    function displaySchools(schools, fitBounds = true) {
+        const resultsList = document.getElementById('results-list');
+        resultsList.innerHTML = '';
+        schoolResultsLayer.clearLayers();
+
+        document.getElementById('poi-counter-badge').innerText = `${schools.length} Found`;
+
+        if (schools.length === 0) {
+            resultsList.innerHTML = '<div class="text-center py-12 text-slate-400"><p class="text-xs">No schools match your filter.</p></div>';
+            return;
+        }
+
+        schools.forEach(feature => {
+            const schoolProps = feature.properties;
+            const schoolCoords = { lat: schoolProps.lat, lng: schoolProps.lon };
+
+            const schoolIcon = createDivIcon('fa-graduation-cap', 'school-marker');
+            const marker = L.marker(schoolCoords, { icon: schoolIcon }).addTo(schoolResultsLayer);
+            // Show school name on hover instead of click for better UX
+            marker.bindTooltip(schoolProps.name || schoolProps.formatted);
+
+            const card = document.createElement('div');
+            card.className = "bg-white p-3 rounded-lg border border-slate-200 shadow-sm cursor-pointer hover:border-brandGreen transition-colors";
+            card.innerHTML = `
+                <h4 class="text-sm font-bold text-slate-800 truncate">${schoolProps.name || schoolProps.street}</h4>
+                <p class="text-xs text-slate-500 capitalize">${schoolProps.address_line2}</p>
+            `;
+            
+            card.addEventListener('mouseenter', () => marker.getElement()?.classList.add('marker-highlight'));
+            card.addEventListener('mouseleave', () => marker.getElement()?.classList.remove('marker-highlight'));
+
+            // The new handler for selecting a school
+            const selectHandler = () => {
+                map.flyTo(schoolCoords, 16);
+                showSchoolInfoCard(feature);
+            };
+
+            card.addEventListener('click', selectHandler);
+            marker.on('click', selectHandler);
+
+            resultsList.appendChild(card);
+        });
+
+        // Fit map to show all results
+        if (fitBounds && schools.length > 0) {
+            const group = new L.featureGroup(schoolResultsLayer.getLayers());
+            // Check if there are any layers to prevent error on empty filter result
+            if (Object.keys(group._layers).length > 0) {
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+    }
+</script>
+{% endblock %}

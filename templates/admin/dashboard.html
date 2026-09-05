@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="bg-slate-100 min-h-screen">
+    <!-- Header -->
+    <div class="bg-white shadow-md">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+            <div class="text-sm">
+                <span>Welcome, <strong>{{ request.user.email }}</strong>!</span>
+                <a href="#" class="logout-trigger ml-4 text-brandGreenDark font-semibold hover:underline">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="py-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Mock Card 1: Manage Users -->
+                <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+                    <h3 class="text-lg font-semibold text-gray-900">Manage Users</h3>
+                    <p class="mt-2 text-sm text-gray-600">View, edit, and manage all user accounts.</p>
+                    <a href="/admin/accounts/user/" class="mt-4 inline-block text-brandGreen font-bold hover:underline">Go to Users &rarr;</a>
+                </div>
+                <!-- Mock Card 2: View Listings -->
+                <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+                    <h3 class="text-lg font-semibold text-gray-900">Moderate Listings</h3>
+                    <p class="mt-2 text-sm text-gray-600">Approve, deny, or edit user-submitted dorm listings.</p>
+                    <a href="#" class="mt-4 inline-block text-brandGreen font-bold hover:underline">View Listings &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
